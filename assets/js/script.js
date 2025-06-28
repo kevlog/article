@@ -1,9 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("to");
+    const baseUrl = window.location.origin;
+    const fullUrl = `${baseUrl}/${slug}`;
 
-    if (!slug) {
-        document.body.innerHTML = "<h2>Error: Parameter `to` tidak ditemukan di URL.</h2>";
+    function isValidSlug(slug) {
+        return (
+            typeof slug === "string" && // Pastikan slug berupa string
+            slug.trim() !== "" && // Hindari string kosong/spasi
+            slug.toLowerCase() !== "null" && // Tangkal ?to=null
+            slug.toLowerCase() !== "undefined" // Tangkal ?to=undefined
+        );
+    }
+
+    if (!isValidSlug(slug)) {
+        document.body.innerHTML = "<p>Error: Parameter `to` tidak ditemukan di URL atau tidak valid.</p>";
         return;
     }
 
@@ -11,14 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => res.json())
         .then((data) => {
             const target = data[slug];
-            if (target) {
-                window.location.replace(target);
+            if (target && target.title && target.url) {
+                document.title = target.title;
+                window.location.replace(target.url);
             } else {
-                document.body.innerHTML = `<h2>Error: Link untuk "${slug}" tidak ditemukan.</h2>`;
+                document.title = "Error: Link tidak ditemukan";
+                document.body.innerHTML = `<p>Error: Link untuk "${fullUrl}" tidak ditemukan.</p>`;
             }
         })
         .catch((err) => {
-            console.error("Gagal load redirects.json:", err);
-            document.body.innerHTML = "<h2>Gagal mengambil data redirect.</h2>";
+            console.error("Gagal load data.json:", err);
+            document.body.innerHTML = "<p>Gagal mengambil data redirect.</p>";
         });
 });
